@@ -34,18 +34,5 @@ To run the app, type the following command in the terminal.
 
  [Emotion-based music recommendation system](
 
-https://github.com/Hiralsathwara/Emotion-based-music-recommendation-system/assets/127468119/5b2626f6-68fe-499c-9c3e-56b37f7c5d26
 
-)
- 
-
-## Authors
-
-- [HIRAL SATHWARA](https://github.com/Hiralsathwara)
-
-
-
-## Support
-
-For support,hiral sathwara (https://www.linkedin.com/in/hiral-sathwara-873561269/)
 
