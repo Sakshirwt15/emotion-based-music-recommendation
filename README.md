@@ -1,51 +1,67 @@
+🎶 Emotion-Based Music Recommendation System
 
-# Emotion-based music recommendation system
+An AI-powered music recommender app built with Streamlit, OpenCV, TensorFlow, and Spotify API.
+The system detects your facial emotion in real-time and recommends songs from Spotify playlists that match your mood.
 
-This web-based app written in Python will first scan your current emotion with the help of OpenCV & then crop the image of your face from the entire frame once the cropped image is ready it will give this image to a trained MACHINE LEARNING model to predict the emotion of the cropped image. This will happen 30-40 times in 2-3 seconds, now once we have a list of emotions (containing duplicate elements) with us it will first sort the list based on frequency & remove the duplicates. After performing all the above steps we will have a list containing the user's emotions in sorted order, Now we have to iterate over the list & recommend songs based on emotions in the list.
+✨ Features
+
+🎭 Emotion Detection – Uses a CNN model trained on FER-2013 to detect emotions (Happy, Sad, Angry, Neutral, etc.)
+
+🎶 Spotify Integration – Plays full songs directly in the app via Spotify’s Embed API
+
+🤖 Smart Recommendations – Suggests songs based on detected emotions from a preprocessed dataset + Spotify search
+
+📷 Live Webcam Support – Captures your mood in real-time using OpenCV
+
+🎨 Modern UI – Dark-themed, card-style interface with interactive buttons
+
+🛠️ Tech Stack
+
+Frontend: Streamlit
+
+Computer Vision: OpenCV
+
+Deep Learning: TensorFlow / Keras
+
+Music Data: Spotify Web API
+
+Dataset: MUSE V3 + FER-2013
+
+🚀 Installation
+
+1️⃣ Clone this repo
+
+git clone https://github.com/sakshirwt15/emotion-based-music-recommendation.git
+cd emotion-based-music-recommendation
 
 
-## Installation & Run
+2️⃣ Install dependencies
 
-Create a new project in Pycharm and add the above files. After that open the terminal and run the following command. This will install all the modules needed to run this app. 
-
-```bash
-  pip install -r requirements.txt
-```
-
-To run the app, type the following command in the terminal. 
-```bash
-  streamlit run app.py
-```
-
-## Libraries
-
-- Streamlit
-- Opencv
-- Numpy
-- Pandas
-- Tensorflow
-- Keras
+pip install -r requirements.txt
 
 
-
-
-
-## Demo video
-
- [Emotion-based music recommendation system](
-
-https://github.com/Hiralsathwara/Emotion-based-music-recommendation-system/assets/127468119/5b2626f6-68fe-499c-9c3e-56b37f7c5d26
-
+3️⃣ Add Spotify credentials (create app at Spotify Dashboard
 )
- 
 
-## Authors
-
-- [HIRAL SATHWARA](https://github.com/Hiralsathwara)
+export SPOTIPY_CLIENT_ID="your_client_id"
+export SPOTIPY_CLIENT_SECRET="your_client_secret"
 
 
+(Or set them in .streamlit/secrets.toml for Streamlit Cloud.)
 
-## Support
+▶️ Run the App
+streamlit run app.py
 
-For support,hiral sathwara (https://www.linkedin.com/in/hiral-sathwara-873561269/)
 
+Then open: http://localhost:8501/
+
+📸 How It Works
+
+Start the webcam by clicking Start Emotion Scan
+
+The CNN model detects your facial emotion
+
+Recommended Spotify songs appear in cards with embedded player
+
+
+MIT License © 2025 Sakshi rawat
