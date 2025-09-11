@@ -40,6 +40,7 @@ cd emotion-based-music-recommendation
 pip install -r requirements.txt
 
 
+<<<<<<< HEAD
 3️⃣ Add Spotify credentials (create app at Spotify Dashboard
 )
 
@@ -65,3 +66,14 @@ Recommended Spotify songs appear in cards with embedded player
 
 
 MIT License © 2025 Sakshi rawat
+=======
+
+
+
+## Demo video
+
+ [Emotion-based music recommendation system](
+
+
+
+>>>>>>> f74b5e930449292ba153cff152a27f9713bfc97c
