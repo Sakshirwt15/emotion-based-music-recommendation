@@ -97,6 +97,6 @@ Thumbs.db
 *.joblib
 
 # Data files (optional - if they're large)
-*.csv
-*.xlsx
-*.json
+#*.csv
+#*.xlsx
+#*.json
