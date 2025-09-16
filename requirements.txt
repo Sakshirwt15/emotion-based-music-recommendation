@@ -4,5 +4,4 @@ pandas
 opencv-python-headless
 tensorflow
 keras
-collection
 librosa
