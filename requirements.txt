@@ -1,7 +1,9 @@
 streamlit
+opencv-python-headless
 numpy
 pandas
-opencv-python-headless
+scikit-learn
+librosa
 tensorflow
 keras
-librosa
+spotipy
