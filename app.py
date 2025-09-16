@@ -7,6 +7,7 @@ Emotion-based Music Recommendation System
 """
 
 import os
+import pathlib
 from collections import Counter
 
 import numpy as np
@@ -24,6 +25,8 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
 # ------------------------- CONFIG ------------------------- #
+BASE_DIR = pathlib.Path(__file__).parent
+
 st.set_page_config(
     page_title="Emotion Music Recommender",
     page_icon="🎵",
