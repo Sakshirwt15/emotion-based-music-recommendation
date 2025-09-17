@@ -1,6 +1,6 @@
 """
 Emotion-based Music Recommendation System
-- Detects emotion from webcam (CNN)
+- Detects emotion from webcam (CNN via streamlit-webrtc)
 - Picks songs from CSV by emotion
 - Looks up each song on Spotify
 - Plays tracks with embedded Spotify player
@@ -15,6 +15,9 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 import cv2
+
+# New import for webcam streaming
+from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
 
 # Keras (via TensorFlow)
 from tensorflow.keras.models import Sequential  # type: ignore
@@ -90,7 +93,6 @@ st.markdown(
 )
 
 # --------------------- SPOTIFY AUTH ----------------------- #
-# Use your credentials (you shared these earlier)
 CLIENT_ID = "16cc572754584e54bfcbe88fff303ba1"
 CLIENT_SECRET = "bee35803bf21489ba44dbf6a2ded4b7e"
 
@@ -103,10 +105,6 @@ sp = spotipy.Spotify(
 
 @st.cache_data(show_spinner=False)
 def spotify_search(track_name: str, artist_name: str):
-    """
-    Search Spotify for the best matching track.
-    Returns dict with id/url/name/artist or None if not found.
-    """
     try:
         query = f"track:{track_name} artist:{artist_name}"
         res = sp.search(q=query, type="track", limit=1)
@@ -125,10 +123,6 @@ def spotify_search(track_name: str, artist_name: str):
 
 
 def spotify_rows_from_df(df_in: pd.DataFrame, limit: int = 10):
-    """
-    For the first `limit` rows of df_in, try to fetch Spotify info.
-    Returns a list of dict rows with spotify_id/url + fallbacks.
-    """
     rows = []
     for _, r in df_in.head(limit).iterrows():
         info = spotify_search(str(r["name"]), str(r["artist"]))
@@ -145,14 +139,9 @@ def spotify_rows_from_df(df_in: pd.DataFrame, limit: int = 10):
 
 
 # ---------------------- LOAD DATA ------------------------- #
-import pathlib
-
-BASE_DIR = pathlib.Path(__file__).parent
-
 csv_path = BASE_DIR / "muse_v3.csv"
 model_path = BASE_DIR / "model.h5"
 haar_path = BASE_DIR / "haarcascade_frontalface_default.xml"
-
 
 if not os.path.exists(csv_path):
     st.error(f"CSV file not found at {csv_path}")
@@ -181,7 +170,6 @@ df_happy = df[72000:]
 
 
 def recommend_songs(emotion_list):
-    """Sample songs from the relevant emotion buckets."""
     data = pd.DataFrame()
     times_dict = {
         1: [30],
@@ -196,33 +184,21 @@ def recommend_songs(emotion_list):
         t = t_list[i]
         try:
             if v == "Neutral":
-                data = pd.concat(
-                    [data, df_neutral.sample(n=min(t, len(df_neutral)))],
-                    ignore_index=True,
-                )
+                data = pd.concat([data, df_neutral.sample(n=min(t, len(df_neutral)))], ignore_index=True)
             elif v == "Angry":
-                data = pd.concat(
-                    [data, df_angry.sample(n=min(t, len(df_angry)))], ignore_index=True
-                )
+                data = pd.concat([data, df_angry.sample(n=min(t, len(df_angry)))], ignore_index=True)
             elif v == "Fearful":
-                data = pd.concat(
-                    [data, df_fear.sample(n=min(t, len(df_fear)))], ignore_index=True
-                )
+                data = pd.concat([data, df_fear.sample(n=min(t, len(df_fear)))], ignore_index=True)
             elif v == "Happy":
-                data = pd.concat(
-                    [data, df_happy.sample(n=min(t, len(df_happy)))], ignore_index=True
-                )
+                data = pd.concat([data, df_happy.sample(n=min(t, len(df_happy)))], ignore_index=True)
             else:
-                data = pd.concat(
-                    [data, df_sad.sample(n=min(t, len(df_sad)))], ignore_index=True
-                )
+                data = pd.concat([data, df_sad.sample(n=min(t, len(df_sad)))], ignore_index=True)
         except ValueError:
             continue
     return data
 
 
 # ---------------------- EMOTION MODEL --------------------- #
-# Build the same architecture and load weights
 model = Sequential(
     [
         Conv2D(32, kernel_size=(3, 3), activation="relu", input_shape=(48, 48, 1)),
@@ -251,69 +227,58 @@ emotion_dict = {
     6: "Surprised",
 }
 
-face_cascade = cv2.CascadeClassifier(haar_path)
+face_cascade = cv2.CascadeClassifier(str(haar_path))
 
-# ------------------------- UI ---------------------------- #
-st.markdown(
-    "<div class='main-title'>🎶 Emotion-Based Music Recommender</div>",
-    unsafe_allow_html=True,
-)
-st.markdown(
-    "<div class='sub-title'>Detect your mood and instantly get songs you can play on Spotify</div>",
-    unsafe_allow_html=True,
-)
+# ---------------------- STREAMLIT UI ---------------------- #
+st.markdown("<div class='main-title'>🎶 Emotion-Based Music Recommender</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-title'>Detect your mood and instantly get songs you can play on Spotify</div>", unsafe_allow_html=True)
 
 if "emotions_detected" not in st.session_state:
     st.session_state["emotions_detected"] = []
 
-# --------------- Emotion Scan (stable) ------------------- #
-if st.button("📸 Start Emotion Scan"):
-    cap = cv2.VideoCapture(0)
-    count = 0
-    emotions = []
-    stframe = st.empty()
 
-    while count < 20:  # sample 20 frames
-        ret, frame = cap.read()
-        if not ret:
-            break
+# --------------- Emotion Scan (via streamlit-webrtc) ------ #
+class EmotionDetector(VideoTransformerBase):
+    def __init__(self):
+        self.emotions = []
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
+    def transform(self, frame):
+        img = frame.to_ndarray(format="bgr24")
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
-        for x, y, w, h in faces:
-            roi_gray = gray[y : y + h, x : x + w]
-            # preprocess: resize + normalize
+        for (x, y, w, h) in faces:
+            roi_gray = gray[y:y+h, x:x+w]
             roi_gray = cv2.resize(roi_gray, (48, 48)).astype("float32") / 255.0
             cropped_img = np.expand_dims(np.expand_dims(roi_gray, -1), 0)
 
             pred = model.predict(cropped_img, verbose=0)
             max_index = int(np.argmax(pred))
-            emotions.append(emotion_dict[max_index])
+            emotion = emotion_dict[max_index]
+            self.emotions.append(emotion)
 
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-            cv2.putText(
-                frame,
-                emotion_dict[max_index],
-                (x, y - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (255, 255, 255),
-                2,
-            )
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            cv2.putText(img, emotion, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,255,0), 2)
 
-        stframe.image(frame, channels="BGR")
-        count += 1
+        return img
 
-    cap.release()
 
-    if emotions:
-        # Majority vote across frames
-        final_emotion = Counter(emotions).most_common(1)[0][0]
-        st.session_state["emotions_detected"] = [final_emotion]
-        st.success(f"✅ Emotion scan complete! Final Detected: {final_emotion}")
-    else:
-        st.warning("⚠️ No face detected. Try again with better lighting.")
+st.write("📸 Start the webcam below to detect your emotion:")
+
+webrtc_ctx = webrtc_streamer(
+    key="emotion-detect",
+    video_transformer_factory=EmotionDetector,
+)
+
+if webrtc_ctx and webrtc_ctx.video_transformer:
+    if st.button("✅ Save Final Emotion"):
+        if webrtc_ctx.video_transformer.emotions:
+            final_emotion = Counter(webrtc_ctx.video_transformer.emotions).most_common(1)[0][0]
+            st.session_state["emotions_detected"] = [final_emotion]
+            st.success(f"Final Detected Emotion: {final_emotion}")
+        else:
+            st.warning("⚠️ No face detected. Try again with better lighting.")
+
 
 # --------------- Recommendations + Spotify --------------- #
 if st.session_state["emotions_detected"]:
@@ -324,16 +289,11 @@ if st.session_state["emotions_detected"]:
 
     if st.button("🎵 Recommend & Play Songs"):
         rec_df = recommend_songs(st.session_state["emotions_detected"])
-        st.markdown(
-            "<h3 style='text-align:center;'>✨ Recommended Songs for You</h3>",
-            unsafe_allow_html=True,
-        )
+        st.markdown("<h3 style='text-align:center;'>✨ Recommended Songs for You</h3>", unsafe_allow_html=True)
 
-        # Build Spotify rows (limit to 10 to keep UI snappy)
         rows = spotify_rows_from_df(rec_df, limit=10)
 
         for i, s in enumerate(rows, start=1):
-            # Card header (always visible)
             st.markdown(
                 f"""
                 <div class="song-card">
@@ -343,7 +303,6 @@ if st.session_state["emotions_detected"]:
                 """,
                 unsafe_allow_html=True,
             )
-            # Embed Spotify player if found, else show fallback link
             if s["spotify_id"]:
                 components.iframe(
                     src=f"https://open.spotify.com/embed/track/{s['spotify_id']}?utm_source=generator",
@@ -352,13 +311,8 @@ if st.session_state["emotions_detected"]:
                     scrolling=False,
                 )
             else:
-                st.markdown(
-                    f"[🔗 Open (fallback link)]({s['fallback_url']})",
-                    unsafe_allow_html=True,
-                )
+                st.markdown(f"[🔗 Open (fallback link)]({s['fallback_url']})", unsafe_allow_html=True)
+
 
 # ------------------------- Footer ------------------------ #
-st.markdown(
-    "<div class='footer'>Made with ❤️ using Streamlit, OpenCV, TensorFlow & Spotify API</div>",
-    unsafe_allow_html=True,
-)
+st.markdown("<div class='footer'>Made with ❤️ using Streamlit, OpenCV, TensorFlow & Spotify API</div>", unsafe_allow_html=True)

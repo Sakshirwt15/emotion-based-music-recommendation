@@ -1,9 +1,20 @@
+# Web app framework
 streamlit
+streamlit-webrtc
+
+# Computer vision
 opencv-python-headless
-numpy
-pandas
-scikit-learn
-librosa
+
+# Deep learning
 tensorflow
 keras
+
+# Data handling
+numpy
+pandas
+
+# Spotify API
 spotipy
+
+# Misc
+protobuf==3.20.*
