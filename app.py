@@ -199,22 +199,21 @@ def recommend_songs(emotion_list):
 
 
 # ---------------------- EMOTION MODEL --------------------- #
-model = Sequential(
-    [
-        Conv2D(32, kernel_size=(3, 3), activation="relu", input_shape=(48, 48, 1)),
-        Conv2D(64, kernel_size=(3, 3), activation="relu"),
-        MaxPooling2D(pool_size=(2, 2)),
-        Conv2D(128, kernel_size=(3, 3), activation="relu"),
-        MaxPooling2D(pool_size=(2, 2)),
-        Conv2D(128, kernel_size=(3, 3), activation="relu"),
-        MaxPooling2D(pool_size=(2, 2)),
-        Dropout(0.25),
-        Flatten(),
-        Dense(1024, activation="relu"),
-        Dropout(0.5),
-        Dense(7, activation="softmax"),
-    ]
-)
+model = Sequential()
+model.add(Conv2D(32, kernel_size=(3, 3), activation="relu", input_shape=(48, 48, 1)))
+model.add(Conv2D(64, kernel_size=(3, 3), activation="relu"))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Conv2D(128, kernel_size=(3, 3), activation="relu"))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Conv2D(128, kernel_size=(3, 3), activation="relu"))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.25))
+model.add(Flatten())
+model.add(Dense(1024, activation="relu"))
+model.add(Dropout(0.5))
+model.add(Dense(7, activation="softmax"))
+
+
 model.load_weights(model_path)
 
 emotion_dict = {
